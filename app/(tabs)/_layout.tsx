@@ -24,11 +24,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="formSignature"
         options={{
-          title: 'Explore',
+          title: 'Form',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
+          <TabBarIcon name={focused ? 'document-text' : 'document-outline'} color={color} />
           ),
         }}
       />
