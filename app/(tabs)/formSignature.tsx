@@ -296,9 +296,9 @@ const InterventionForm = () => {
 
       </ScrollView>
       <View style={styles.buttonContainer}>
-        <Button title="Submit" onPress={handleSubmit} color="#00bfff" />
-        <Button title="Export PDF" onPress={createPDF} color="#4CAF50" />
-      </View>
+          <Button title="Submit" onPress={handleSubmit} color="#00bfff" />
+          <Button title="Export PDF" onPress={createPDF} color="#4CAF50" />
+        </View>
     </GestureHandlerRootView>
   );
 };
@@ -359,8 +359,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     marginVertical: 10,
-    paddingHorizontal: 50,
+    paddingHorizontal: 20,
     borderRadius: 8,
     backgroundColor: 'transparent',
   },
