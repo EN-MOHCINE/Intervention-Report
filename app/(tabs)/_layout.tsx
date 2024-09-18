@@ -32,6 +32,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="test_api"
+        options={{
+          title: 'Form',
+          tabBarIcon: ({ color, focused }) => (
+          <TabBarIcon name={focused ? 'body' : 'body'} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
