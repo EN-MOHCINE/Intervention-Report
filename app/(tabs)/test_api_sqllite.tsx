@@ -1,223 +1,73 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Platform, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/Ionicons';
-import axios from 'axios';
-import { Modal } from 'react-native';
-import { Button } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import * as SQLite from 'expo-sqlite';
 
-let SQLite: { enablePromise: (arg0: boolean) => void; openDatabase: (arg0: { name: string; location: string; }) => any; };
-if (Platform.OS !== 'web') {
-  SQLite = require('react-native-sqlite-storage').default;
-}
-
-export default function TabTwoScreen() {
+const TestApiSqlLite = () => {
   const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newUserData, setNewUserData] = useState({
-    name: '',
-    email: '',
-    role: '',
-    // Add more fields as needed
-  });
-
-  const handleCreateUser = () => {
-    // Logic to create a new user with newUserData
-    // Update the users list with the new user
-    // Close the modal
-  };
 
   useEffect(() => {
-    if (SQLite && Platform.OS !== 'web') {
-      SQLite.enablePromise(true);
-      initializeDatabase();
-    }
-    fetchUsers();
+    const initializeDatabase = async () => {
+      const db = await SQLite.openDatabaseAsync('test_sqllite.db');
+
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name VARCHAR(255),
+          email VARCHAR(255) UNIQUE,
+          email_verified_at TIMESTAMP NULL,
+          password VARCHAR(255),
+          remember_token VARCHAR(100),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('----------------------------------');
+      console.log('Table `users` created successfully');
+      console.log('----------------------------------');
+
+      await db.execAsync(`
+        INSERT INTO users (name, email, password) VALUES
+        ('John Doe', 'john.doe@example.com', 'password123'),
+        ('Jane Smith', 'jane.smitdsh@example.com', 'securepass456');
+      `);
+      console.log('----------------------------------');
+      console.log('Users inserted successfully');
+      console.log('----------------------------------');
+      // Query all users from the database
+      const data  = await db.execAsync(`SELECT * FROM users`);
+      console.log('Table users' + data)
+    };
+
+    initializeDatabase();
   }, []);
 
-  const initializeDatabase = useCallback(async () => {
-    try {
-      const db = await SQLite.openDatabase({ name: 'blog_manager.db', location: 'default' });
-      await db.executeSql(
-        'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, email TEXT, role TEXT, picture TEXT, created_at TEXT, updated_at TEXT);'
-      );
-      console.log('Table created successfully');
-    } catch (error) {
-      console.error('Error initializing database:', error);
-    }
-  }, []);
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      const response = await axios.get('http://127.0.0.1:8000/api/users');
-      const fetchedUsers = response.data;
-
-      if (Platform.OS !== 'web') {
-        const db = await SQLite.openDatabase({ name: 'blog_manager.db', location: 'default' });
-        fetchedUsers.forEach(async (user) => {
-          try {
-            await db.executeSql(
-              'INSERT OR REPLACE INTO users (id, name, email, role, picture, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-              [user.id, user.name, user.email, user.role, user.picture, user.created_at, user.updated_at]
-            );
-            console.log('User upserted in SQLite');
-          } catch (error) {
-            console.error('Error upserting user:', error);
-          }
-        });
-      }
-
-      setUsers(fetchedUsers);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      setIsLoading(false);
-    }
-  }, []);
-
-  const handleDelete = useCallback(async (id) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== id));
-    
-    if (Platform.OS !== 'web') {
-      try {
-        const db = await SQLite.openDatabase({ name: 'blog_manager.db', location: 'default' });
-        await db.executeSql('DELETE FROM users WHERE id = ?', [id]);
-        console.log('User deleted from SQLite');
-      } catch (error) {
-        console.error('Error deleting user:', error);
-      }
-    }
-  }, []);
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="black" />
-        <Text style={styles.loadingText}>Loading data...</Text>
-      </View>
-    );
-  }
+  const renderUser = ({ item }) => (
+    <View style={styles.userCard}>
+      <Text>Name: {item.name}</Text>
+      <Text>Email: {item.email}</Text>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
-     <Button title="Add User" onPress={() => setIsModalVisible(true)} />
-
-    <Modal visible={isModalVisible} animationType="slide">
-      <View style={styles.modalContainer}>
-        <TextInput
-          placeholder="Name"
-          value={newUserData.name}
-          onChangeText={(text) => setNewUserData({ ...newUserData, name: text })}
-        />
-        <TextInput
-          placeholder="Email"
-          value={newUserData.email}
-          onChangeText={(text) => setNewUserData({ ...newUserData, email: text })}
-        />
-        <TextInput
-          placeholder="Role"
-          value={newUserData.role}
-          onChangeText={(text) => setNewUserData({ ...newUserData, role: text })}
-        />
-        {/* Add more TextInput fields for other user details */}
-        <Button title="Submit" onPress={handleCreateUser} />
-        <Button title="Cancel" onPress={() => setIsModalVisible(false)} />
-      </View>
-    </Modal>
+    <View>
+      <Text>Test SQLite connection and creation of the `users` table</Text>
       <FlatList
         data={users}
-        keyExtractor={item => item.id.toString()}
-        numColumns={2}
-        renderItem={({ item, index }) => (
-          <View style={[styles.card, { backgroundColor: getColor(index) }]}>
-            <Text style={styles.cardTitle}>ID: {item.id}</Text>
-            <Text style={styles.cardText}>Name: {item.name}</Text>
-            <Text style={styles.cardText}>Email: {item.email}</Text>
-            <Text style={styles.cardText}>Role: {item.role}</Text>
-            <Icon
-              style={styles.deleteIcon}
-              name="trash-outline"
-              size={20}
-              color="#000"
-              onPress={() => handleDelete(item.id)}
-            />
-          </View>
-        )}
-        ListEmptyComponent={<Text>No data available</Text>}
-        ListHeaderComponent={<Text style={styles.cardHeader}>Show post of users</Text>}
+        renderItem={renderUser}
+        keyExtractor={(item) => item.id.toString()}
       />
-    </SafeAreaView>
+    </View>
   );
-}
-
-const getColor = (index) => {
-  const colors = ['#f28b82', '#fbbc04', '#34a853', '#4285f4', '#fabb7b', '#cbb8db'];
-  return colors[index % colors.length];
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
+  userCard: {
     padding: 10,
-  }, 
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 20,
-  },
-  card: {
-    flex: 1,
-    margin: 10,
-    borderRadius: 10,
+    margin: 5,
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
-  },
-  cardText: {
-    fontSize: 16,
-    color: 'white',
-    marginBottom: 10,
-  },
-  deleteIcon: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    color: 'red',
-  },
-  cardHeader: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'green',
-    marginBottom: 10,
-    padding: 10,
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: 'black',
-    fontSize: 18,
-    marginBottom: 10,
+    borderColor: 'lightgray',
+    borderRadius: 5,
   },
 });
+
+export default TestApiSqlLite;
